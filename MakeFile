@@ -1,0 +1,23 @@
+CC = g++
+CFLAGS = -c -Wall
+SRC_DIR = source
+INC_DIR = include
+OBJ_DIR = object
+SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
+INCLUDES := $(wildcard $(INC_DIR)/*.h)
+OBJECTS := $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+EXECUTABLE = myprogram
+
+all: $(EXECUTABLE)
+
+$(EXECUTABLE): $(OBJECTS)
+	$(CC) $(OBJECTS) -o $@
+
+$(OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp $(OBJ_DIR)
+	$(CC) $(CFLAGS) -I$(INC_DIR) $< -o $@
+
+$(OBJ_DIR):
+	mkdir $(OBJ_DIR)
+
+#clean:
+#	rm -r .\$(OBJ_DIR)
