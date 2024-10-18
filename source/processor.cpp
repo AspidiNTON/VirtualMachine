@@ -1,5 +1,4 @@
 #include "processor.h"
-#include "assembler.h"
 
 void execute(const char* filename){
     FILE* filePtr = fopen(filename, "r");
@@ -30,7 +29,7 @@ void execute(const char* filename){
         case SUB:
             pop(stack, &b);
             pop(stack, &a);
-            push(stack, a + b);
+            push(stack, a - b);
             break;
         case MUL:
             pop(stack, &b);

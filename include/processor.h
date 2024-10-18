@@ -2,6 +2,7 @@
 #define PROCESSOR_H
 
 #include "stack.h"
+#include "cmds.h"
 
 void execute(const char* filename);
 
