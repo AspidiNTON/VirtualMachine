@@ -4,6 +4,7 @@
 enum CMDS{
     HLT,
     PUSH,
+    POP,
     ADD,
     SUB,
     MUL,
@@ -14,6 +15,18 @@ enum CMDS{
     SIN,
     COS,
     DUMP
+};
+
+enum PushMask {
+    PUSH_CONST = 1,
+    PUSH_REGISTER = 2,
+    PUSH_RAM = 4
+};
+
+enum PopMask{
+    POP_CONST = 1,
+    POP_REGISTER = 2,
+    POP_RAM = 4
 };
 
 #endif

@@ -1,4 +1,7 @@
-push 1.5
-push 2.8
-add
-out
+push 7
+pop AX
+push 3
+pop [3]
+push AX
+pop [AX]
+hlt

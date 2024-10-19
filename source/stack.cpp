@@ -125,6 +125,12 @@ stackErrorType top(Stack* stack, StackElem* elem){
     return NO_ERROR;
 }
 
+stackErrorType printStack(const Stack* stack){
+    for (int i = 0; i < stack->size; ++i) printf("%lg ", *((double*)(stack->data + sizeof(CANARY)) + i));
+    putchar('\n');
+    return NO_ERROR;
+}
+
 /*stackErrorType printStack(const Stack* stack) {
     stackErrorType err = checkStack(stack);
     if (err != NO_ERROR) return err;
