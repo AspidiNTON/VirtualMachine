@@ -38,8 +38,7 @@ void popCommand(SPU * proc) {
     char mask = proc->code[++proc->ip]; ++proc->ip;
     if (mask & POP_CONST && mask & POP_RAM) { proc->ram[(int)(*(double*)(proc->code + proc->ip))] = x; proc->ip += sizeof(double); }
     if (mask & POP_REGISTER && mask & POP_RAM) proc->ram[(int)proc->regs[(int)proc->code[proc->ip++]]] = x;
-    if (mask & POP_REGISTER && mask ^ POP_RAM) proc->regs[(int)proc->code[proc->ip++]] = x;
-}
+    if (mask & POP_REGISTER && !(mask & POP_RAM)) proc->regs[(int)proc->code[proc->ip++]] = x;}
 
 void execute(const char* filename){
     FILE* filePtr = fopen(filename, "rb");
@@ -67,13 +66,14 @@ void execute(const char* filename){
 
     int line = 0;
     while (true) {
-        printf("Line %d\n", line++);
+        printf("Line %d; ip: %d\n", line++, proc.ip);
         printSPU(&proc);
         switch (proc.code[proc.ip])
         {
         case HLT: fclose(filePtr); return;
         case PUSH: pushCommand(&proc); break;
         case POP: popCommand(&proc); break;
+        case JMP: proc.ip = *(int*)(proc.code + proc.ip + 1); break;
         default:
             break;
         }

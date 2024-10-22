@@ -1,6 +1,26 @@
 #include "assembler.h"
 
 
+typedef uint64_t hash_t;
+
+
+struct Label{
+    char name[40];
+    int ip;
+    hash_t hash;
+    int entries[10];
+    int entriesCount = 0;
+};
+
+struct Assembler{
+    FILE* filePtr;
+    char code[1000];
+    int ip = 0;
+    Label labels[100] = {};
+    int labelCount = 0;
+};
+
+
 
 char* getOutputFilename(const char* filename){
     const char* inputExtension = ".asm";
@@ -23,148 +43,204 @@ char* getOutputFilename(const char* filename){
     return outputFilename;
 }
 
-bool assemble(const char* filename){
-    char* outputFilename = getOutputFilename(filename);
-    if (outputFilename == NULL) return false;
 
+/*bool readLabelArray(Label *labels, int* labelCount, const char* filename){
     FILE* filePtr = fopen(filename, "r");
     if (filePtr == NULL)
     {
         printErr("Unable to open file\n");
         return false;
     }
-    
-    /*struct stat sb;
-    if (stat(filename, &sb) == -1) 
-        printErr("Failed to read file stats");
-        return false;
-    textFile->size = sb.st_size;
-    textFile->buff = (char*)calloc(textFile->size + 2, sizeof(char));*/
+
+}*/
+
+hash_t calcHash(const char* str){
+    hash_t hash = 5381;
+    while (*str != '\0') {
+        hash = hash * 33 ^ *str;
+        ++str;
+    }
+    return hash;
+}
 
 
-    char code[1000];
-    int ip = 0;
-
+bool checkJump(Assembler* ass){
     char str[100] = "";
-    int strLen = 0;
-    double constValue = 0;
-    while (fscanf(filePtr, "%s", str) == 1) {
-        if (stricmp(str, "hlt") == 0) {
-            code[ip++] = HLT;
-        } else if (stricmp(str, "push") == 0) {
-            code[ip++] = PUSH;
-            fgetc(filePtr);
-            fgets(str, 100, filePtr);
-            strLen = strlen(str);
-            str[strLen - 1] = '\0';
-            --strLen;
-
-            if (str[0] == '[' && str[strLen - 1] == ']') {
-                char * plusPos = strchr(str, '+');
-                if (plusPos == NULL) {
-                    if (str[1] >= 'A' && str[1] <= 'D' && str[2] == 'X') {
-                        code[ip++] = PUSH_RAM | PUSH_REGISTER;
-                        code[ip++] = str[1] - 'A';
-                    } else {
-                        char * trash = NULL;
-                        constValue = strtod(str + 1, &trash);
-                        if (trash < &str[strLen - 1]) {
-                            printErr("Incorrect push argument\n");
-                            return false;
-                        }
-                        code[ip++] = PUSH_RAM | PUSH_CONST;
-                        *(double*)(code + ip) = constValue;
-                        ip += sizeof(double);
-                    }
-                } else {
-                    if (str[1] >= 'A' && str[1] <= 'D' && str[2] == 'X') {
-                        char * trash = NULL;
-                        constValue = strtod(plusPos + 1, &trash);
-                        if (trash < &str[strLen - 1]) {
-                            printErr("Incorrect push argument: check if second argument is double\n");
-                            return false;
-                        }
-                        code[ip++] = PUSH_RAM | PUSH_REGISTER | PUSH_CONST;
-                        code[ip++] = str[1] - 'A';
-                        *(double*)(code + ip) = constValue;
-                        ip += sizeof(double);
-                    } else {
-                        printErr("Incorrect push argument: registry should be first\n");
-                        return false;
-                    }
-                }
+    fgetc(ass->filePtr);
+    fgets(str, 100, ass->filePtr);
+    int strLen = strlen(str);
+    str[strLen - 1] = '\0';
+    --strLen;
+    hash_t hash = calcHash(str);
+    bool f = true;
+    for (int i = 0; i < ass->labelCount; ++i) {
+        if (ass->labels[i].hash == hash) {
+            if (ass->labels[i].ip == -1) {
+                ass->labels[i].entries[ass->labels[i].entriesCount] = ass->ip;
+                ++ass->labels[i].entriesCount;
             } else {
-                char * plusPos = strchr(str, '+');
-                if (plusPos == NULL) {
-                    if (str[0] >= 'A' && str[0] <= 'D' && str[1] == 'X') {
-                        code[ip++] = PUSH_REGISTER;
-                        code[ip++] = str[0] - 'A';
-                    } else {
-                        char * trash = NULL;
-                        constValue = strtod(str, &trash);
-                        if (trash < &str[strLen - 1]) {
-                            printErr("Incorrect push argument\n");
-                            printErr("%lg %s", constValue, trash);
-                            return false;
-                        }
-                        code[ip++] = PUSH_CONST;
-                        *(double*)(code + ip) = constValue;
-                        ip += sizeof(double);
-                    }
-                } else {
-                    if (str[0] >= 'A' && str[0] <= 'D' && str[1] == 'X') {
-                        char * trash = NULL;
-                        constValue = strtod(plusPos + 1, &trash);
-                        if (trash < &str[strLen]) {
-                            printErr("Incorrect push argument: check if second argument is double\n");
-                            return false;
-                        }
-                        code[ip++] = PUSH_REGISTER | PUSH_CONST;
-                        code[ip++] = str[0] - 'A';
-                        *(double*)(code + ip) = constValue;
-                        ip += sizeof(double);
-                    } else {
-                        printErr("Incorrect push argument: registry should be first\n");
-                        return false;
-                    }
-                }
+                *(int*)(ass->code + ass->ip) = ass->labels[i].ip;
             }
-        } else if (stricmp(str, "pop") == 0){
-            code[ip++] = POP;
-            fscanf(filePtr, "%s", str);
-            strLen = strlen(str);
-            if (str[0] == '[' && str[strLen - 1] == ']') {
-                if (str[1] >= 'A' && str[1] <= 'D' && str[2] == 'X') {
-                    code[ip++] = POP_REGISTER | POP_RAM;
-                    code[ip++] = str[1] - 'A';
-                } else {
-                    char * trash = NULL;
-                    constValue = strtod(str + 1, &trash);
-                    if (trash < &str[strLen - 1]) {
-                        printErr("Incorrect pop argument 1\n");
-                        return false;
-                    }
-                    code[ip++] = POP_CONST | POP_RAM;
-                    *(double*)(code + ip) = constValue; ip += sizeof(double);
-                }
+            f = false;
+            break;
+        }
+    }
+    if (f) {
+        ass->labels[ass->labelCount].hash = hash;
+        ass->labels[ass->labelCount].ip = -1;
+        ass->labels[ass->labelCount].entriesCount = 1;
+        ass->labels[ass->labelCount].entries[0] = ass->ip;
+        strcpy(ass->labels[ass->labelCount].name, str);
+        ++ass->labelCount;
+    }
+    ass->ip += sizeof(int);
+    return true;
+}
+
+bool assemblePush(Assembler* ass){
+    ass->code[ass->ip++] = PUSH;
+    char str[100] = "";
+    fgetc(ass->filePtr);
+    fgets(str, 100, ass->filePtr);
+    int strLen = strlen(str);
+    str[strLen - 1] = '\0';
+    --strLen;
+    if (str[0] == '[' && str[strLen - 1] == ']') {
+        char * plusPos = strchr(str, '+');
+        if (plusPos == NULL) {
+            if (str[1] >= 'A' && str[1] <= 'D' && str[2] == 'X') {
+                ass->code[ass->ip++] = PUSH_RAM | PUSH_REGISTER;
+                ass->code[ass->ip++] = str[1] - 'A';
             } else {
-                if (str[0] >= 'A' && str[0] <= 'D' && str[1] == 'X') {
-                    code[ip++] = POP_REGISTER;
-                    code[ip++] = str[0] - 'A';
-                } else {
-                    char * trash = NULL;
-                    constValue = strtod(str, &trash);
-                    if (trash < &str[strLen]) {
-                        printErr("Incorrect pop argument 2\n");
+                char * trash = NULL;
+                double constValue = strtod(str + 1, &trash);
+                if (trash < &str[strLen - 1]) {
+                        printErr("Incorrect push argument\n");
                         return false;
-                    }
-                    code[ip++] = POP_CONST;
-                    *(double*)(code + ip) = constValue; ip += sizeof(double);
                 }
+                    ass->code[ass->ip++] = PUSH_RAM | PUSH_CONST;
+                    *(double*)(ass->code + ass->ip) = constValue;
+                    ass->ip += sizeof(double);
+            }
+        } else {
+            if (str[1] >= 'A' && str[1] <= 'D' && str[2] == 'X') {
+                char * trash = NULL;
+                double constValue = strtod(plusPos + 1, &trash);
+                if (trash < &str[strLen - 1]) {
+                    printErr("Incorrect push argument: check if second argument is double\n");
+                    return false;
+                }
+                ass->code[ass->ip++] = PUSH_RAM | PUSH_REGISTER | PUSH_CONST;
+                ass->code[ass->ip++] = str[1] - 'A';
+                *(double*)(ass->code + ass->ip) = constValue;
+                ass->ip += sizeof(double);
+            } else {
+                printErr("Incorrect push argument: registry should be first\n");
+                return false;
             }
         }
-            
-            
+    } else {
+        char * plusPos = strchr(str, '+');
+        if (plusPos == NULL) {
+            if (str[0] >= 'A' && str[0] <= 'D' && str[1] == 'X') {
+                ass->code[ass->ip++] = PUSH_REGISTER;
+                ass->code[ass->ip++] = str[0] - 'A';
+            } else {
+                char * trash = NULL;
+                double constValue = strtod(str, &trash);
+                if (trash < &str[strLen - 1]) {
+                    printErr("Incorrect push argument\n");
+                    printErr("%lg %s", constValue, trash);
+                    return false;
+                }
+                ass->code[ass->ip++] = PUSH_CONST;
+                *(double*)(ass->code + ass->ip) = constValue;
+                ass->ip += sizeof(double);
+            }
+        } else {
+            if (str[0] >= 'A' && str[0] <= 'D' && str[1] == 'X') {
+                char * trash = NULL;
+                double constValue = strtod(plusPos + 1, &trash);
+                if (trash < &str[strLen]) {
+                    printErr("Incorrect push argument: check if second argument is double\n");
+                    return false;
+                }
+                ass->code[ass->ip++] = PUSH_REGISTER | PUSH_CONST;
+                ass->code[ass->ip++] = str[0] - 'A';
+                *(double*)(ass->code + ass->ip) = constValue;
+                ass->ip += sizeof(double);
+            } else {
+                printErr("Incorrect push argument: registry should be first\n");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool assemblePop(Assembler* ass){
+    ass->code[ass->ip++] = POP;
+    char str[100] = "";
+    fscanf(ass->filePtr, "%s", str);
+    int strLen = strlen(str);
+    if (str[0] == '[' && str[strLen - 1] == ']') {
+        if (str[1] >= 'A' && str[1] <= 'D' && str[2] == 'X') {
+            ass->code[ass->ip++] = POP_REGISTER | POP_RAM;
+            ass->code[ass->ip++] = str[1] - 'A';
+        } else {
+            char * trash = NULL;
+            double constValue = strtod(str + 1, &trash);
+            if (trash < &str[strLen - 1]) {
+                printErr("Incorrect pop argument 1\n");
+                return false;
+            }
+            ass->code[ass->ip++] = POP_CONST | POP_RAM;
+            *(double*)(ass->code + ass->ip) = constValue;
+            ass->ip += sizeof(double);
+        }
+    } else {
+        if (str[0] >= 'A' && str[0] <= 'D' && str[1] == 'X') {
+            ass->code[ass->ip++] = POP_REGISTER;
+            ass->code[ass->ip++] = str[0] - 'A';
+        } else {
+            char * trash = NULL;
+            double constValue = strtod(str, &trash);
+            if (trash < &str[strLen]) {
+                printErr("Incorrect pop argument 2\n");
+                return false;
+            }
+            ass->code[ass->ip++] = POP_CONST;
+            *(double*)(ass->code + ass->ip) = constValue;
+            ass->ip += sizeof(double);
+        }
+    }
+    return true;
+}
+
+
+bool assemble(const char* filename){
+    Assembler ass = {};
+    char* outputFilename = getOutputFilename(filename);
+    if (outputFilename == NULL) return false;
+    ass.filePtr = fopen(filename, "r");
+    FILE* filePtr = ass.filePtr;
+    if (ass.filePtr == NULL)
+    {
+        printErr("Unable to open file\n");
+        return false;
+    }
+    char str[100];
+    while (fscanf(filePtr, "%s", str) == 1) {
+        if (stricmp(str, "hlt") == 0) {
+            ass.code[ass.ip++] = HLT;
+        } else if (stricmp(str, "push") == 0) {
+            if (!assemblePush(&ass)) return false;
+        } else if (stricmp(str, "pop") == 0){
+            if (!assemblePop(&ass)) return false;
+        } else if (stricmp(str, "jmp") == 0) {
+            ass.code[ass.ip++] = JMP;
+            if (!checkJump(&ass)) return false;
+        }
         /* else if (stricmp(str, "add") == 0) {
             fprintf(outFilePtr, "%d\n", ADD);
         } else if (stricmp(str, "sub") == 0) {
@@ -186,10 +262,31 @@ bool assemble(const char* filename){
         } else if (stricmp(str, "dump") == 0) {
             fprintf(outFilePtr, "%d\n", DUMP);
         }*/ else {
-            printErr("Invalid command:\n");
-            printErr("%s", str);
+            if (str[strlen(str) - 1] != ':') {
+                printErr("Invalid command:\n");
+                printErr("%s", str);
                 fclose(filePtr);
-            return false;
+                return false;
+            } else {
+                str[strlen(str) - 1] = '\0';
+                hash_t hash = calcHash(str);
+                bool f = true;
+                for (int i = 0; i < ass.labelCount; ++i) {
+                    if (ass.labels[i].hash == hash) {
+                        ass.labels[i].ip = ass.ip;
+                        f = false;
+                        for (int j = 0; j < ass.labels[i].entriesCount; ++j) {
+                            *(int*)(ass.code + ass.labels[i].entries[j]) = ass.ip;
+                        }
+                    }
+                }
+                if (f) {
+                    ass.labels[ass.labelCount].hash = hash;
+                    ass.labels[ass.labelCount].ip = ass.ip;
+                    strcpy(ass.labels[ass.labelCount].name, str);
+                    ++ass.labelCount;
+                }
+            }
         }
     }
     FILE* outFilePtr = fopen(outputFilename, "wb");
@@ -199,7 +296,7 @@ bool assemble(const char* filename){
         fclose(filePtr);
         return false;
     }
-    fwrite(code, sizeof(char), ip, outFilePtr);
+    fwrite(ass.code, sizeof(char), ass.ip, outFilePtr);
     fclose(filePtr);
     fclose(outFilePtr);
     return true;

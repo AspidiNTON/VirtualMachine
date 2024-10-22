@@ -14,7 +14,14 @@ enum CMDS{
     SQRT,
     SIN,
     COS,
-    DUMP
+    DUMP,
+    JMP,
+    JA,
+    JB,
+    JAE,
+    JBE,
+    JE,
+    JNE
 };
 
 enum PushMask {
