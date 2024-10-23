@@ -217,8 +217,21 @@ bool assemblePop(Assembler* ass){
     return true;
 }
 
+/**
+ * 
+ * cmd '[]'/'ax'/'5'/label
+ * 
+ * input: str
+ * output: enum
+ * 
+ * input: str
+ * output: struct {has[], hasreg, reg, hasnum, num, islabel, address};
+ * 
+ * И дальше проверить =)
+ */
 
 bool assemble(const char* filename){
+    // Часть 1. Создание объекта
     Assembler ass = {};
     char* outputFilename = getOutputFilename(filename);
     if (outputFilename == NULL) return false;
@@ -229,8 +242,10 @@ bool assemble(const char* filename){
         printErr("Unable to open file\n");
         return false;
     }
+    // Часть 2. Разбиваем на слова
     char str[100];
-    while (fscanf(filePtr, "%s", str) == 1) {
+    while (fscanf(filePtr, "%99s", str) == 1) {
+        // Часть 3. Парсим слова
         if (stricmp(str, "hlt") == 0) {
             ass.code[ass.ip++] = HLT;
         } else if (stricmp(str, "push") == 0) {

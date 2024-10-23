@@ -64,11 +64,11 @@ void execute(const char* filename){
     }
     initialize(&proc.stack);
 
-    //int line = 0;
+    int line = 0;
     double a, b;
     while (true) {
-        //printf("Line %d; ip: %d\n", line++, proc.ip);
-        //printSPU(&proc);
+        printf("Line %d; ip: %d\n", line++, proc.ip);
+        printSPU(&proc);
         switch (proc.code[proc.ip])
         {
         case HLT: fclose(filePtr); return;
