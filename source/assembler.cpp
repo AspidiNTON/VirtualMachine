@@ -20,8 +20,6 @@ struct Assembler{
     int labelCount = 0;
 };
 
-
-
 char* getOutputFilename(const char* filename){
     const char* inputExtension = ".asm";
     const char* outputExtension = ".txt";
@@ -43,17 +41,6 @@ char* getOutputFilename(const char* filename){
     return outputFilename;
 }
 
-
-/*bool readLabelArray(Label *labels, int* labelCount, const char* filename){
-    FILE* filePtr = fopen(filename, "r");
-    if (filePtr == NULL)
-    {
-        printErr("Unable to open file\n");
-        return false;
-    }
-
-}*/
-
 hash_t calcHash(const char* str){
     hash_t hash = 5381;
     while (*str != '\0') {
@@ -62,7 +49,6 @@ hash_t calcHash(const char* str){
     }
     return hash;
 }
-
 
 bool checkJump(Assembler* ass){
     char str[100] = "";
@@ -230,18 +216,33 @@ bool assemblePop(Assembler* ass){
  * И дальше проверить =)
  */
 
-bool assemble(const char* filename){
-    // Часть 1. Создание объекта
-    Assembler ass = {};
-    char* outputFilename = getOutputFilename(filename);
-    if (outputFilename == NULL) return false;
-    ass.filePtr = fopen(filename, "r");
-    FILE* filePtr = ass.filePtr;
-    if (ass.filePtr == NULL)
+/*struct arguments{
+    bool ram;
+    bool hasreg;
+    int reg;
+    bool hasnum;
+    double num;
+    bool islabel;
+    int address;
+};*/
+
+
+FILE* initAssembler(Assembler* ass, const char* filename){
+    ass->filePtr = fopen(filename, "r");
+    if (ass->filePtr == NULL)
     {
         printErr("Unable to open file\n");
-        return false;
+        return NULL;
     }
+    return ass->filePtr;
+}
+
+bool assemble(const char* filename){
+    char* outputFilename = getOutputFilename(filename);
+    if (outputFilename == NULL) return false;
+    Assembler ass = {};
+    FILE* filePtr = initAssembler(&ass, filename);
+    if (filePtr == NULL) return false;
     // Часть 2. Разбиваем на слова
     char str[100];
     while (fscanf(filePtr, "%99s", str) == 1) {
@@ -287,28 +288,12 @@ bool assemble(const char* filename){
         } else if (stricmp(str, "jne") == 0) {
             ass.code[ass.ip++] = JNE;
             if (!checkJump(&ass)) return false;
-        }
-        /* else if (stricmp(str, "add") == 0) {
-            fprintf(outFilePtr, "%d\n", ADD);
-        } else if (stricmp(str, "sub") == 0) {
-            fprintf(outFilePtr, "%d\n", SUB);
-        } else if (stricmp(str, "mul") == 0) {
-            fprintf(outFilePtr, "%d\n", MUL);
-        } else if (stricmp(str, "div") == 0) {
-            fprintf(outFilePtr, "%d\n", DIV);
-        } else if (stricmp(str, "out") == 0) {
-            fprintf(outFilePtr, "%d\n", OUT);
-        } else if (stricmp(str, "in") == 0) {
-            fprintf(outFilePtr, "%d\n", IN);
-        } else if (stricmp(str, "sqrt") == 0) {
-            fprintf(outFilePtr, "%d\n", SQRT);
-        } else if (stricmp(str, "sin") == 0) {
-            fprintf(outFilePtr, "%d\n", SIN);
-        } else if (stricmp(str, "cos") == 0) {
-            fprintf(outFilePtr, "%d\n", COS);
-        } else if (stricmp(str, "dump") == 0) {
-            fprintf(outFilePtr, "%d\n", DUMP);
-        }*/ else {
+        } else if (stricmp(str, "call") == 0) {
+            ass.code[ass.ip++] = CALL;
+            if (!checkJump(&ass)) return false;
+        } else if (stricmp(str, "ret") == 0) {
+            ass.code[ass.ip++] = RET;
+        } else {
             if (str[strlen(str) - 1] != ':') {
                 printErr("Invalid command:\n");
                 printErr("%s", str);

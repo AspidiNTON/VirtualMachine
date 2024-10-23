@@ -21,7 +21,9 @@ enum CMDS{
     JAE,
     JBE,
     JE,
-    JNE
+    JNE,
+    CALL,
+    RET
 };
 
 enum PushMask {

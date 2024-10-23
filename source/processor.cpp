@@ -41,6 +41,7 @@ void popCommand(SPU * proc) {
     if (mask & POP_REGISTER && !(mask & POP_RAM)) proc->regs[(int)proc->code[proc->ip++]] = x;}
 
 void execute(const char* filename){
+    
     FILE* filePtr = fopen(filename, "rb");
     if (filePtr == NULL)
     {
@@ -132,6 +133,14 @@ void execute(const char* filename){
             pop(proc.stack, &b), pop(proc.stack, &a);
             if (b != a) proc.ip = *(int*)(proc.code + proc.ip + 1);
             else proc.ip += 1 + sizeof(int);
+            break;
+        case CALL:
+            push(proc.stack, proc.ip + 1 + sizeof(int));
+            proc.ip = *(int*)(proc.code + proc.ip + 1);
+            break;
+        case RET:
+            pop(proc.stack, &a);
+            proc.ip = (int)a;
             break;
         default:
             break;
