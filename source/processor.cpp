@@ -64,16 +64,75 @@ void execute(const char* filename){
     }
     initialize(&proc.stack);
 
-    int line = 0;
+    //int line = 0;
+    double a, b;
     while (true) {
-        printf("Line %d; ip: %d\n", line++, proc.ip);
-        printSPU(&proc);
+        //printf("Line %d; ip: %d\n", line++, proc.ip);
+        //printSPU(&proc);
         switch (proc.code[proc.ip])
         {
         case HLT: fclose(filePtr); return;
         case PUSH: pushCommand(&proc); break;
         case POP: popCommand(&proc); break;
         case JMP: proc.ip = *(int*)(proc.code + proc.ip + 1); break;
+        case ADD:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            push(proc.stack, a + b);
+            ++proc.ip; break;
+        case SUB:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            push(proc.stack, a - b);
+            ++proc.ip; break;
+        case MUL:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            push(proc.stack, a * b);
+            ++proc.ip; break;
+        case DIV:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            push(proc.stack, a / b);
+            ++proc.ip; break;
+        case IN:
+            scanf("%lg", &a);
+            push(proc.stack, a);
+            ++proc.ip; break;
+        case OUT:
+            pop(proc.stack, &a);
+            printf("%lg\n", a);
+            ++proc.ip; break;
+        case SQRT:
+            pop(proc.stack, &a);
+            push(proc.stack, sqrt(a));
+            ++proc.ip; break;
+        case JA:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            if (b > a) proc.ip = *(int*)(proc.code + proc.ip + 1);
+            else proc.ip += 1 + sizeof(int);
+            break;
+        case JB:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            if (b < a) proc.ip = *(int*)(proc.code + proc.ip + 1);
+            else proc.ip += 1 + sizeof(int);
+            break;
+        case JAE:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            if (b >= a) proc.ip = *(int*)(proc.code + proc.ip + 1);
+            else proc.ip += 1 + sizeof(int);
+            break;
+        case JBE:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            if (b <= a) proc.ip = *(int*)(proc.code + proc.ip + 1);
+            else proc.ip += 1 + sizeof(int);
+            break;
+        case JE:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            if (b == a) proc.ip = *(int*)(proc.code + proc.ip + 1);
+            else proc.ip += 1 + sizeof(int);
+            break;
+        case JNE:
+            pop(proc.stack, &b), pop(proc.stack, &a);
+            if (b != a) proc.ip = *(int*)(proc.code + proc.ip + 1);
+            else proc.ip += 1 + sizeof(int);
+            break;
         default:
             break;
         }

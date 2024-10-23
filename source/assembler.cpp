@@ -237,8 +237,40 @@ bool assemble(const char* filename){
             if (!assemblePush(&ass)) return false;
         } else if (stricmp(str, "pop") == 0){
             if (!assemblePop(&ass)) return false;
+        } else if (stricmp(str, "add") == 0) {
+            ass.code[ass.ip++] = ADD;
+        } else if (stricmp(str, "sub") == 0) {
+            ass.code[ass.ip++] = SUB;
+        } else if (stricmp(str, "mul") == 0) {
+            ass.code[ass.ip++] = MUL;
+        } else if (stricmp(str, "div") == 0) {
+            ass.code[ass.ip++] = DIV;
+        } else if (stricmp(str, "in") == 0) {
+            ass.code[ass.ip++] = IN;
+        } else if (stricmp(str, "out") == 0) {
+            ass.code[ass.ip++] = OUT;
+        } else if (stricmp(str, "sqrt") == 0) {
+            ass.code[ass.ip++] = SQRT;
         } else if (stricmp(str, "jmp") == 0) {
             ass.code[ass.ip++] = JMP;
+            if (!checkJump(&ass)) return false;
+        } else if (stricmp(str, "ja") == 0) {
+            ass.code[ass.ip++] = JA;
+            if (!checkJump(&ass)) return false;
+        } else if (stricmp(str, "jb") == 0) {
+            ass.code[ass.ip++] = JB;
+            if (!checkJump(&ass)) return false;
+        } else if (stricmp(str, "jae") == 0) {
+            ass.code[ass.ip++] = JAE;
+            if (!checkJump(&ass)) return false;
+        } else if (stricmp(str, "jbe") == 0) {
+            ass.code[ass.ip++] = JBE;
+            if (!checkJump(&ass)) return false;
+        } else if (stricmp(str, "je") == 0) {
+            ass.code[ass.ip++] = JE;
+            if (!checkJump(&ass)) return false;
+        } else if (stricmp(str, "jne") == 0) {
+            ass.code[ass.ip++] = JNE;
             if (!checkJump(&ass)) return false;
         }
         /* else if (stricmp(str, "add") == 0) {

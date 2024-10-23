@@ -4,7 +4,7 @@
 #include "processor.h"
 
 int main() {
-    assemble("aboba.asm");
-    execute("aboba.txt");
+    assemble("square.asm");
+    execute("square.txt");
     return 0;
 }
