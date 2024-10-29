@@ -5,7 +5,7 @@
 
 int main(int argc, const char *argv[]) {
     if (argc > 2) {
-        printErr("Too many arguments");
+        printErr("Too many arguments\n");
         return 1;
     }
     if (argc > 1) {
@@ -21,11 +21,11 @@ int main(int argc, const char *argv[]) {
             char procFilename[80];
             strcpy(procFilename, argv[1]);
             strcpy(procFilename + strLen, ".txt");
-            assemble(asmFilename);
+            if (!assemble(asmFilename)) return 0;
             execute(procFilename);
         }
     } else {
-        assemble("square.asm");
+        if (!assemble("square.asm")) return 0;
         execute("square.txt");
     }
 

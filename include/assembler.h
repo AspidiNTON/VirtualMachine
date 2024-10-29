@@ -9,7 +9,6 @@
 #include "cmds.h"
 #include "errorTypes.h"
 
-
 bool assemble(const char* filename);
 
 #endif

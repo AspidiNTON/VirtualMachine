@@ -4,6 +4,9 @@ in
 pop CX
 pop BX
 pop AX
+push 0
+push AX
+je linear
 push BX
 push BX
 mul
@@ -45,10 +48,12 @@ out
 out
 out
 hlt
+
 negative:
 push 0
 out
 hlt
+
 equal:
 push 0
 push BX
@@ -59,5 +64,32 @@ push 2
 div
 push 1
 out
+out
+hlt
+
+linear:
+push 0
+push BX
+je zeroorinf
+push 0
+push CX
+sub
+push BX
+div
+push 1
+out
+out
+hlt
+
+zeroorinf:
+push 0
+push CX
+je czero
+push 0
+out
+hlt
+
+czero:
+push INF
 out
 hlt

@@ -6,7 +6,7 @@
 
 #include "stack.h"
 #include "cmds.h"
-
+#include "spu.h"
 
 void execute(const char* filename);
 
