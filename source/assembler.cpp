@@ -11,7 +11,7 @@ struct Label{
 
 struct Assembler{
     FILE* filePtr;
-    char code[2000];
+    char code[3000];
     int ip = 0;
     char str[200];
     Label labels[100] = {};
@@ -69,9 +69,13 @@ int getCommandCodeFromHash(Assembler* ass, hash_t hash){
     return -1;
 }
 
+char* skipSpaces(char* str){
+    while (*str == ' ' || *str == '\t') ++str;
+    return str;
+}
+
 int identifyCommandArguments(Assembler* ass) {
-    char* start = ass->str;
-    while (*start == ' ' || *start == '\t') ++start;
+    char* start = skipSpaces(ass->str);
     if (*start == '\n' || *start == ';') return NOTHING;
     char* plus = NULL;
     char* end = start;
@@ -79,9 +83,12 @@ int identifyCommandArguments(Assembler* ass) {
         if (*end == '+' && plus == NULL) plus = end;
         ++end;
     }
+
     --end;
+    // [] - rize ram bit
+    // ...
     if (*start == '[' && *end == ']') {
-        if (plus) {
+        if (plus) { // tryPlus(...)
             if (start[2] == 'X' && start[1] >= 'A' && start[1] <= 'D') {
                 char * trash = NULL;
                 double constValue = strtod(++plus, &trash);
@@ -193,16 +200,21 @@ bool assemble(const char* filename){
     Assembler ass = {};
     FILE* filePtr = initAssembler(&ass, filename);
     if (filePtr == NULL) return false;
+
     while (true) {
-        if (fscanf(filePtr, "%99s", ass.str) != 1) break;
+        if (fscanf(filePtr, "%199s", ass.str) != 1) break;
         int commandCode = getCommandCodeFromHash(&ass, calcHash(ass.str));
         if (commandCode == -1) {
             if (ass.str[strlen(ass.str) - 1] == ':') {
                 addNewLabel(&ass);
             } else {
-                printErr("Invalid command:\n");
-                printErr("%s\n", ass.str);
-                return false;
+                if (*skipSpaces(ass.str) != ';'){       
+                    printErr("Invalid command:\n");
+                    printErr("%s\n", ass.str);
+                    return false;
+                } else {
+                    fgets(ass.str, 199, ass.filePtr);
+                }
             }
         } else {
             ass.code[ass.ip++] = commandCode;

@@ -20,12 +20,14 @@ void execute(const char* filename){
     struct stat sb;
     if (stat(filename, &sb) == -1) {
         printErr("Unable to read file stats\n");
+
         return;
     }
     SPU proc = {};
     proc.code = (char*)calloc(sb.st_size + 1, sizeof(char));
     if (proc.code == NULL) {
         printErr("Unable to calloc\n");
+        
         return;
     }
     if ((int)fread(proc.code, sizeof(char), sb.st_size, filePtr) != sb.st_size) {
@@ -49,6 +51,7 @@ void execute(const char* filename){
                 printErr("Runtime error: undefined RAM address\n");
                 break;
             }
+            return;
         }
     }
 }

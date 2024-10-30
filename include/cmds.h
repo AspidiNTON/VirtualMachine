@@ -2,10 +2,10 @@
 #define CMDS_H
 
 enum AcceptedArgumentsMask {
-    NOTHING = 1,
-    NUMBER = 2,
-    REGISTER = 4,
-    NUMBER_AND_REGISTER = 8,
+    NOTHING             = 1 << 0,
+    NUMBER              = 1 << 1,
+    REGISTER            = 1 << 2,
+    NUMBER_AND_REGISTER = 1 << 3,
     RAM_NUMBER = 16,
     RAM_REGISTER = 32,
     RAM_NUMBER_AND_REGISTER = 64,
